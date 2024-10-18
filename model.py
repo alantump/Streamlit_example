@@ -17,7 +17,7 @@ def train_and_save_model():
     X = data[features]
     y = data['Life Expectancy (IHME)']
 
-       # Train the RandomForest Regressor
+    # Train the RandomForest Regressor
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     model.fit(X, y)
 
