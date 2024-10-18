@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px    
 from sklearn.ensemble import RandomForestRegressor
-import pickle
-import os
-from model import train_and_save_model
 
 file_path = 'global_development_data.csv'
 
@@ -17,13 +14,11 @@ max_year = int(data['year'].max())
 # Set the page configuration to use the whole width of the page
 st.set_page_config(layout="wide")
 #### Model
-# Check if the model pickle file exists
-if not os.path.exists('life_expectancy_model.pkl'):
-    train_and_save_model()
-# Load the trained model
-with open('life_expectancy_model.pkl', 'rb') as file:
-    model = pickle.load(file)
-
+features = ['GDP per capita', 'headcount_ratio_upper_mid_income_povline', 'year']
+X = data[features]
+y = data['Life Expectancy (IHME)']
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X, y)
 ####
 st.write("Content for Data Explorer")
 
@@ -73,29 +68,13 @@ with tabs[0]:
                      })
     st.plotly_chart(fig)
 
-    # Model stuff again
-
-
     st.write("Predict Life Expectancy:")
     input_gdp = st.number_input("Enter GDP per capita", min_value=0.0, value=medianGPT)
     input_poverty = st.number_input("Enter headcount ratio upper mid income povline", min_value=0.0, value=headcount_ratio_upper_mid_income_povline_mean)
-    input_year = st.number_input("Enter Year for prediction", min_value=min_year, max_value=max_year, value=2000)
-    input_data = pd.DataFrame({
-            'GDP per capita': [input_gdp],
-            'headcount_ratio_upper_mid_income_povline': [input_poverty],
-            'year': [input_year]
-    })    
-    prediction = model.predict(input_data)
-
+    input_year = st.number_input("Enter Year", min_value=min_year, max_value=max_year, value=year)
+    prediction = model.predict([[input_gdp, input_poverty, input_year]])
     st.write(f"Estimated Life Expectancy: {prediction[0]:.2f} years")
-    
-    features = ['GDP per capita', 'headcount_ratio_upper_mid_income_povline', 'year']
-    feature_importances = model.feature_importances_
-    importance_df = pd.DataFrame({'Feature': features, 'Importance': feature_importances})
-    importance_df = importance_df.sort_values(by='Importance', ascending=False)
-    
-    fig = px.bar(importance_df, x='Importance', y='Feature', orientation='h', title='Feature Importance')
-    st.plotly_chart(fig)
+
 
 with tabs[1]:
     st.write("Content for Country Deep Dive")
